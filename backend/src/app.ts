@@ -3,6 +3,7 @@ import 'dotenv/config'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import { globalErrorHandler } from './middlewares/error.middleware.js'
 
 export const app = express();
 
@@ -22,3 +23,8 @@ app.use('/health',(req:Request,res:Response)=>{
         message:"API is healthy"
     })
 })
+
+
+
+// global error handler
+app.use(globalErrorHandler)
