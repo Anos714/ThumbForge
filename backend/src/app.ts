@@ -6,6 +6,10 @@ import cors from "cors";
 import { env } from "./validators/env.validator.js";
 import { globalErrorHandler } from "./middlewares/error.middleware.js";
 import authRouter from "./routes/auth.routes.js";
+import { createRouteHandler } from "uploadthing/express";
+import { uploadRouter } from "./config/uploadthing.js";
+import userRouter from "./routes/user.route.js";
+
 export const app = express();
 
 app.use(helmet());
@@ -20,12 +24,21 @@ app.use(
   }),
 );
 
+// middleware for uploading avatar(pfp images) to uploadthing service
+app.use(
+  "/api/v1/uploadthing",
+  createRouteHandler({
+    router: uploadRouter,
+  }),
+);
+
 app.use("/health", (req: Request, res: Response) => {
   return res.status(200).json({
     message: "API is healthy",
   });
 });
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/user", userRouter);
 
 // global error handler
 app.use(globalErrorHandler);
