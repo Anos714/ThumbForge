@@ -24,7 +24,7 @@ export const users = pgTable("users", {
   authProvider: authProviderEnum("auth_provider").default("local").notNull(),
   role: roleEnum("role").default("user").notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
-  emailVerifiedAt: timestamp("email_verified_at"),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

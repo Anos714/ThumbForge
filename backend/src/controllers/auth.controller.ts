@@ -1,5 +1,6 @@
 import {
   forgotPassSchema,
+  googlePayloadSchema,
   loginUserSchema,
   registerUserSchema,
   resetPassSchema,
@@ -22,9 +23,10 @@ import {
 import { env } from "../validators/env.validator.js";
 import { client } from "../config/redis.js";
 import { sendMail } from "../utils/sendEmail.js";
+import { googleClient } from "../config/google.js";
 
 // response body types
-interface ApiRes {
+export interface ApiRes {
   status: "success" | "fail" | "error";
   message: string;
   data?: unknown;
@@ -352,13 +354,16 @@ export const verifyEmail = catchAsync(
 
     const [updatedUser] = await db
       .update(users)
-      .set({ isVerified: true })
+      .set({ isVerified: true, emailVerifiedAt: new Date() })
       .where(eq(users.email, email))
       .returning();
 
     if (!updatedUser) {
       throw new AppError("User not found or verification failed", 404);
     }
+
+    await client.del(otpRedisKey);
+
     res.status(200).json({
       status: "success",
       message: "Email verified successfully! Your account is now active.",
@@ -459,6 +464,101 @@ export const resetPassword = catchAsync(
     res.status(200).json({
       status: "success",
       message: "Password reset successfully",
+    });
+  },
+);
+
+export const googleAuth = catchAsync(
+  async (req: Request, res: Response<ApiRes>, next: NextFunction) => {
+    const { code } = req.body;
+
+    if (!code) {
+      throw new AppError("Authorization code is required", 400);
+    }
+
+    const { tokens } = await googleClient.getToken(code);
+
+    if (!tokens || !tokens.id_token) {
+      throw new AppError("Failed to retrieve ID token from Google", 400);
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+
+    const rawPayload = ticket.getPayload();
+    if (!rawPayload) {
+      throw new AppError("Google authentication failed", 400);
+    }
+
+    const result = googlePayloadSchema.safeParse(rawPayload);
+    if (!result.success) {
+      throw new AppError("Invalid data received from Google", 400);
+    }
+
+    const { sub, name, email, picture } = result.data;
+
+    let [user] = await db.select().from(users).where(eq(users.email, email));
+
+    if (user && user.authProvider === "local") {
+      throw new AppError(
+        "This email is registered with password. Please login using your email and password.",
+        400,
+      );
+    }
+
+    if (!user) {
+      [user] = await db
+        .insert(users)
+        .values({
+          googleId: sub,
+          fullName: name,
+          email,
+          avatarUrl: picture || null,
+          authProvider: "google",
+          isVerified: true,
+          emailVerifiedAt: new Date(),
+        })
+        .returning();
+    } else if (user && user.authProvider === "google") {
+      const hasChanges =
+        user.googleId !== sub ||
+        user.fullName !== name ||
+        user.avatarUrl !== (picture || null);
+
+      if (hasChanges) {
+        [user] = await db
+          .update(users)
+          .set({
+            googleId: sub,
+            fullName: name,
+            avatarUrl: picture || null,
+          })
+          .where(eq(users.id, user.id))
+          .returning();
+      }
+    }
+
+    const jti = generateJti();
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id, jti);
+
+    await client.set(`refreshToken:${jti}`, "true", { EX: 7 * 24 * 60 * 60 });
+    res.cookie("refreshToken", refreshToken, {
+      ...cookieConfig,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Successfully authenticated with Google",
+      data: {
+        fullName: user.fullName,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        accessToken,
+      },
     });
   },
 );

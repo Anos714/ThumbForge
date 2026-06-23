@@ -98,5 +98,9 @@ export const resetPassSchema = z.object({
     }),
 });
 
-export type registerInput = z.infer<typeof registerUserSchema>;
-export type loginInput = z.infer<typeof loginUserSchema>;
+export const googlePayloadSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1, "Name is required"),
+  sub: z.string().min(1, "Google ID (sub) is required"),
+  picture: z.string().url().optional().nullable(),
+});
