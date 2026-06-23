@@ -1,12 +1,26 @@
 import { app } from './app.js'
+import { client } from './config/redis.js';
+import { env } from './validators/env.validator.js';
 
-const PORT = process.env.PORT || 8000;
+const PORT = env.PORT || 8000;
 
-if (!process.env.DATABASE_URL) {
-  console.error("Error: DATABASE_URL is missing in .env file!");
-  process.exit(1);
-}
+const startServer = async () => {
+  try {
+    
+    await client.connect();
 
-app.listen(PORT, () => {
-console.log(`Server running at PORT: ${PORT}`);
-})
+    app.listen(PORT, () => {
+      console.log(`Express server running on port: ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start the server due to Redis/DB error:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+
+
+
+
