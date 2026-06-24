@@ -6,9 +6,9 @@ import cors from "cors";
 import { env } from "./validators/env.validator.js";
 import { globalErrorHandler } from "./middlewares/error.middleware.js";
 import authRouter from "./routes/auth.routes.js";
+import userRouter from "./routes/user.route.js";
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./config/uploadthing.js";
-import userRouter from "./routes/user.route.js";
 
 export const app = express();
 
