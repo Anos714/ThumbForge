@@ -7,6 +7,7 @@ import { env } from "./validators/env.validator.js";
 import { globalErrorHandler } from "./middlewares/error.middleware.js";
 import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.route.js";
+import projectRouter from "./routes/project.route.js";
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./config/uploadthing.js";
 
@@ -38,7 +39,8 @@ app.use("/health", (req: Request, res: Response) => {
   });
 });
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/user", userRouter);
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/projects", projectRouter);
 
 // global error handler
 app.use(globalErrorHandler);
