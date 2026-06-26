@@ -9,6 +9,7 @@ import {
 import { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../utils/catchAsync.js";
 import { AppError } from "../errors/AppError.js";
+import { getZodError } from "../utils/getZodError.js";
 import { db } from "../db/index.js";
 import { users } from "../db/schema/users.js";
 import { eq } from "drizzle-orm";
@@ -44,8 +45,8 @@ export const registerUser = catchAsync(
   async (req: Request, res: Response<ApiRes>, next: NextFunction) => {
     const result = registerUserSchema.safeParse(req.body);
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { email, password, fullName } = result.data;
@@ -135,8 +136,8 @@ export const loginUser = catchAsync(
   async (req: Request, res: Response<ApiRes>, next: NextFunction) => {
     const result = loginUserSchema.safeParse(req.body);
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { email, password } = result.data;
@@ -329,8 +330,8 @@ export const verifyEmail = catchAsync(
     const result = verifyEmailSchema.safeParse(req.body);
 
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { email, code } = result.data;
@@ -380,8 +381,8 @@ export const forgotPassword = catchAsync(
   async (req: Request, res: Response<ApiRes>, next: NextFunction) => {
     const result = forgotPassSchema.safeParse(req.body);
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { email } = result.data;
@@ -430,8 +431,8 @@ export const resetPassword = catchAsync(
   async (req: Request, res: Response<ApiRes>, next: NextFunction) => {
     const result = resetPassSchema.safeParse(req.body);
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { email, code, newPassword } = result.data;
@@ -494,7 +495,8 @@ export const googleAuth = catchAsync(
 
     const result = googlePayloadSchema.safeParse(rawPayload);
     if (!result.success) {
-      throw new AppError("Invalid data received from Google", 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { sub, name, email, picture } = result.data;

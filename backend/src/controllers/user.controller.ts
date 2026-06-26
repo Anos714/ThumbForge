@@ -1,3 +1,4 @@
+import { getZodError } from "../utils/getZodError.js";
 import { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../utils/catchAsync.js";
 import { updateAvatarSchema } from "../validators/user.validator.js";
@@ -12,8 +13,8 @@ export const updateAvatar = catchAsync(
     const result = updateAvatarSchema.safeParse(req.body);
 
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { userId, avatarUrl } = result.data;

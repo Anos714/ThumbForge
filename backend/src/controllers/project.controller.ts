@@ -1,3 +1,4 @@
+import { getZodError } from "./../utils/getZodError.js";
 import { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../utils/catchAsync.js";
 import {
@@ -24,8 +25,8 @@ export const createProject = catchAsync(
     const result = createProjectSchema.safeParse(req.body);
 
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { title, description } = result.data;
@@ -78,8 +79,8 @@ export const getProjectById = catchAsync(
     const result = getProjectByIdSchema.safeParse(req.params);
 
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { id: projectID } = result.data;
@@ -107,8 +108,8 @@ export const patchProject = catchAsync(
     const paramResult = getProjectByIdSchema.safeParse(req.params);
 
     if (!paramResult.success) {
-      const errorMsg = JSON.stringify(paramResult.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = paramResult.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { id: projectID } = paramResult.data;
@@ -116,8 +117,8 @@ export const patchProject = catchAsync(
     const bodyResult = patchProjectSchema.safeParse(req.body);
 
     if (!bodyResult.success) {
-      const errorMsg = JSON.stringify(bodyResult.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = bodyResult.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const updateData = bodyResult.data;
@@ -146,8 +147,8 @@ export const deleteProject = catchAsync(
     const result = getProjectByIdSchema.safeParse(req.params);
 
     if (!result.success) {
-      const errorMsg = JSON.stringify(result.error.flatten().fieldErrors);
-      throw new AppError(errorMsg, 400);
+      const errorMsg = result.error || "Validation failed";
+      throw new AppError(getZodError(errorMsg), 400);
     }
 
     const { id: projectID } = result.data;
