@@ -8,8 +8,9 @@ import { globalErrorHandler } from "./middlewares/error.middleware.js";
 import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.route.js";
 import projectRouter from "./routes/project.route.js";
+import uploadRouter from "./routes/upload.route.js";
 import { createRouteHandler } from "uploadthing/express";
-import { uploadRouter } from "./config/uploadthing.js";
+// import { uploadRouter } from "./config/uploadthing.js";
 
 export const app = express();
 
@@ -25,13 +26,13 @@ app.use(
   }),
 );
 
-// middleware for uploading avatar(pfp images) to uploadthing service
-app.use(
-  "/api/v1/uploadthing",
-  createRouteHandler({
-    router: uploadRouter,
-  }),
-);
+// // middleware for uploading avatar(pfp images) to uploadthing service
+// app.use(
+//   "/api/v1/uploadthing",
+//   createRouteHandler({
+//     router: uploadRouter,
+//   }),
+// );
 
 app.use("/health", (req: Request, res: Response) => {
   return res.status(200).json({
@@ -41,6 +42,7 @@ app.use("/health", (req: Request, res: Response) => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/projects", projectRouter);
+app.use("/api/v1/uploads", uploadRouter);
 
 // global error handler
 app.use(globalErrorHandler);
